@@ -6,7 +6,7 @@ freqpoly <- function(x1, x2, binwidth = 0.1, xlim = c(-3, 3)) {
     x = c(x1, x2),
     g = c(rep("x1", length(x1)), rep("x2", length(x2)))
   )
-  
+
   ggplot(df, aes(x, colour = g)) +
     geom_freqpoly(binwidth = binwidth, size = 1) +
     coord_cartesian(xlim = xlim)
@@ -14,7 +14,7 @@ freqpoly <- function(x1, x2, binwidth = 0.1, xlim = c(-3, 3)) {
 
 t_test <- function(x1, x2) {
   test <- t.test(x1, x2)
-  
+
   # use sprintf() to format t.test() results compactly
   sprintf(
     "p value: %0.3f\n[%0.2f, %0.2f]",
@@ -42,7 +42,7 @@ ui1 <- fluidPage(
       sliderInput("range", label = "Range", value = c(-3, 3), min = -5, max = 5)
     ),
   ),
-  
+
   fluidRow(
     column(9, plotOutput("hist")),
     column(3, verbatimTextOutput("ttest"))
@@ -53,14 +53,14 @@ server1a <- function(input, output, session) {
   output$hist <- renderPlot({
     x1 <- rnorm(input$n1, input$mean1, input$sd1)
     x2 <- rnorm(input$n2, input$mean2, input$sd2)
-    
+
     freqpoly(x1, x2, binwidth = input$binwidth, xlim = input$range)
   }, res = 96)
-  
+
   output$ttest <- renderText({
     x1 <- rnorm(input$n1, input$mean1, input$sd1)
     x2 <- rnorm(input$n2, input$mean2, input$sd2)
-    
+
     t_test(x1, x2)
   })
 }
@@ -71,7 +71,7 @@ server1b <- function(input, output, session) {
   output$hist <- renderPlot({
     freqpoly(x1(), x2(), binwidth = input$binwidth, xlim = input$range)
   }, res = 96)
-  
+
   output$ttest <- renderText({
     t_test(x1(), x2())
   })
@@ -79,7 +79,7 @@ server1b <- function(input, output, session) {
 
 ui2 <- fluidPage(
   fluidRow(
-    column(3, 
+    column(3,
            numericInput("lambda1", label = "lambda1", value = 3),
            numericInput("lambda2", label = "lambda2", value = 5),
            numericInput("n", label = "n", value = 1e4, min = 0)
@@ -89,8 +89,8 @@ ui2 <- fluidPage(
 )
 
 server2 <- function(input, output, session) {
-  timer <- reactiveTimer(500) 
-  
+  timer <- reactiveTimer(500)
+
   x1 <- reactive({
     timer()
     rpois(input$n, input$lambda1)
@@ -99,7 +99,7 @@ server2 <- function(input, output, session) {
     timer()
     rpois(input$n, input$lambda2)
   })
-  
+
   output$hist <- renderPlot({
     freqpoly(x1(), x2(), binwidth = 1, xlim = c(0, 40))
   }, res = 96)
@@ -107,7 +107,7 @@ server2 <- function(input, output, session) {
 
 ui3 <- fluidPage(
   fluidRow(
-    column(3, 
+    column(3,
            numericInput("lambda1", label = "lambda1", value = 3),
            numericInput("lambda2", label = "lambda2", value = 5),
            numericInput("n", label = "n", value = 1e4, min = 0),
@@ -126,7 +126,7 @@ server3 <- function(input, output, session) {
     input$simulate,
     rpois(input$n, input$lambda2)
   )
-  
+
   output$hist <- renderPlot({
     freqpoly(x1(), x2(), binwidth = 1, xlim = c(0, 40))
   }, res = 96)
@@ -139,11 +139,11 @@ ui4 <- fluidPage(
 
 server4 <- function(input, output, session) {
   string <- reactive(paste0("Hello ", input$name, "!"))
-  
+
   output$greeting <- renderText(string())
   observeEvent(input$name, {
     message("Greeting performed")
   })
 }
 
-shinyApp(ui4, server4)
+shinyApp(ui3, server3)

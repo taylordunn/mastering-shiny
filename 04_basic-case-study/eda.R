@@ -41,3 +41,5 @@ injuries_selected %>%
   geom_line(na.rm = TRUE) +
   labs(y = "Injuries per 10,000 people")
 
+injuries_selected %>%
+  sample_n(10) %>% pull(narrative)

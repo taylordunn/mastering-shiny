@@ -99,6 +99,7 @@ server <- function(input, output, session) {
     list(story_index(), d_selected()),
     pull(d_selected(), narrative)[story_index()]
   )
+
   output$narrative <- renderText(narrative_sample())
 }
 

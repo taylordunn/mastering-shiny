@@ -1,7 +1,6 @@
 library(shiny)
 library(tidyverse, warn.conflicts = FALSE)
 
-
 # 10.1 Updating inputs ------------------------------------------------------
 
 
@@ -141,6 +140,7 @@ server <- function(input, output, session) {
 
 library(gapminder)
 continents <- unique(gapminder$continent)
+gapminder <- gapminder %>% mutate(country = as.character(country))
 
 ui <- fluidPage(
   selectInput("continent", "Continent", choices = continents),
@@ -152,7 +152,7 @@ server <- function(input, output, session) {
   observeEvent(input$continent, {
     updateSelectInput(
       inputId = "country",
-      choices = filter(gapminder, continent == input$continent)$country
+      choices = unique(filter(gapminder, continent == input$continent)$country)
     )
   })
 
@@ -174,12 +174,15 @@ ui <- fluidPage(
 )
 server <- function(input, output, session) {
   observeEvent(input$continent, {
+    if(input$continent == "All") {
+      countries <- unique(gapminder$country)
+    } else {
+      countries <-
+        unique(filter(gapminder, continent == input$continent)$country)
+    }
     updateSelectInput(
       inputId = "country",
-      choices = ifelse(
-        input$continent == "All", gapminder$country,
-        filter(gapminder, continent == input$continent)$country
-      )
+      choices = countries
     )
   })
 
@@ -191,12 +194,157 @@ server <- function(input, output, session) {
 
 # 10.2 Dynamic visibility -------------------------------------------------
 
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("controller", "Show", choices = paste0("panel", 1:3))
+    ),
+    mainPanel(
+      tabsetPanel(
+        id = "switcher",
+        type = "hidden",
+        tabPanelBody("panel1", "Panel 1 content"),
+        tabPanelBody("panel2", "Panel 2 content"),
+        tabPanelBody("panel3", "Panel 3 content")
+      )
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$controller, {
+    updateTabsetPanel(inputId = "switcher", selected = input$controller)
+  })
+}
+
+parameter_tabs <- tabsetPanel(
+  id = "params",
+  type = "hidden",
+  tabPanel("normal",
+           numericInput("mean", "mean", value = 1),
+           numericInput("sd", "standard deviation", min = 0, value = 1)
+  ),
+  tabPanel("uniform",
+           numericInput("min", "min", value = 0),
+           numericInput("max", "max", value = 1)
+  ),
+  tabPanel("exponential",
+           numericInput("rate", "rate", value = 1, min = 0),
+  )
+)
+
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("dist", "Distribution",
+                  choices = c("normal", "uniform", "exponential")
+      ),
+      numericInput("n", "Number of samples", value = 100),
+      parameter_tabs,
+    ),
+    mainPanel(
+      plotOutput("hist")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$dist, {
+    updateTabsetPanel(inputId = "params", selected = input$dist)
+  })
+
+  sample <- reactive({
+    switch(input$dist,
+           normal = rnorm(input$n, input$mean, input$sd),
+           uniform = runif(input$n, input$min, input$max),
+           exponential = rexp(input$n, input$rate)
+    )
+  })
+  output$hist <- renderPlot(hist(sample()), res = 96)
+}
+
+ui <- fluidPage(
+  tabsetPanel(
+    id = "wizard",
+    type = "hidden",
+    tabPanel("page_1",
+             "Welcome!",
+             actionButton("page_12", "next")
+    ),
+    tabPanel("page_2",
+             "Only one page to go",
+             actionButton("page_21", "prev"),
+             actionButton("page_23", "next")
+    ),
+    tabPanel("page_3",
+             "You're done!",
+             actionButton("page_32", "prev")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  switch_page <- function(i) {
+    updateTabsetPanel(inputId = "wizard", selected = paste0("page_", i))
+  }
+
+  observeEvent(input$page_12, switch_page(2))
+  observeEvent(input$page_21, switch_page(1))
+  observeEvent(input$page_23, switch_page(3))
+  observeEvent(input$page_32, switch_page(2))
+}
+
 
 ## 10.2.3 Exercises --------------------------------------------------------
 
+p <- ggplot(diamonds, aes(carat))
+
+plot_tabset <- tabsetPanel(
+  id = "plot_tabset", type = "hidden",
+  tabPanel("geom_histogram",
+           numericInput("bins", "Number of bins",
+                        min = 3, max = 100, value = 20)),
+  tabPanel("geom_freqpoly",
+           numericInput("binwidth", "Bin width",
+                        value = 0.5, min = 0.2, max = 2.0)),
+  tabPanel("geom_density",
+           numericInput("bandwidth_adjust", "Bandwidth adjustment factor",
+                        value = 1.0, min = 0.1, max = 2.0))
+)
+
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("plot_func", "Plotting function",
+                  choices = c("geom_histogram", "geom_freqpoly", "geom_density")),
+      plot_tabset
+    ),
+    mainPanel(
+      plotOutput("carat_distribution")
+    )
+  )
+)
+
+server <- function(input, output, session) {
+  observeEvent(input$plot_func,
+               updateTabsetPanel(inputId = "plot_tabset",
+                                 selected = input$plot_func))
+
+  p_dist <- reactive({
+    switch(
+      input$plot_func,
+      geom_histogram = p + geom_histogram(bins = input$bins),
+      geom_freqpoly = p + geom_freqpoly(binwidth = input$binwidth),
+      geom_density = p + geom_density(adjust = input$bandwidth_adjust),
+           uniform = runif(input$n, input$min, input$max),
+           exponential = rexp(input$n, input$rate)
+    )
+  })
+  output$carat_distribution <- renderPlot(p_dist(), res = 96)
+}
+
 
 # 10.3 Creating UI with code ----------------------------------------------
-
 
 ## 10.3.5 Exercises --------------------------------------------------------
 

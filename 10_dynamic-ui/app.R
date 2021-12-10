@@ -488,5 +488,66 @@ server <- function(input, output, session) {
 
 ## 10.3.5 Exercises --------------------------------------------------------
 
+# Exercise 1
+
+ui <- fluidPage(
+  selectInput("type", "type", c("slider", "numeric")),
+)
+server <- function(input, output, session) {
+  output$numeric <- renderUI({
+    if (input$type == "slider") {
+      sliderInput("n", "n", value = 0, min = 0, max = 100)
+    } else {
+      numericInput("n", "n", value = 0, min = 0, max = 100)
+    }
+  })
+}
+
+ui <- fluidPage(
+  selectInput("input_type", "Input type", choices = c("slider", "numeric")),
+  tabsetPanel(
+    id = "type_panel",
+    type = "hidden",
+    tabPanel(
+      "slider",
+      sliderInput("n", "n", value = 0, min = 0, max = 100)
+    ),
+    tabPanel(
+      "numeric",
+      numericInput("n", "n", value = 0, min = 0, max = 100)
+    )
+  )
+)
+server <- function(input, output, session) {
+  isolate(input$n)
+  observeEvent(
+    input$input_type,
+    updateTabsetPanel(inputId = "type_panel", selected = input$input_type)
+  )
+}
+
+# Exercise 2
+
+ui <- fluidPage(
+  actionButton("go", "Enter password"),
+  textOutput("text")
+)
+server <- function(input, output, session) {
+  observeEvent(input$go, {
+    showModal(modalDialog(
+      passwordInput("password", NULL),
+      title = "Please enter your password"
+    ))
+  })
+
+  output$text <- renderText({
+    browser()
+    if (!isTruthy(input$password)) {
+      "No password"
+    } else {
+      "Password entered"
+    }
+  })
+}
 
 shinyApp(ui, server)
